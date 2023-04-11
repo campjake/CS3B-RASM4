@@ -37,7 +37,7 @@ edit_string:
 	STR		X19, [SP, #-16]!	// Push X19
 	STR		X20, [SP, #-16]!	// Push X20
 	STR		X21, [SP, #-16]!	// Push X21
-	STR		X21, [SP, #-16]!	// Push X22
+	STR		X22, [SP, #-16]!	// Push X22
 	STR		LR, [SP, #-16]!		// Push LR
 
 // Get listLength
