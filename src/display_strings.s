@@ -1,55 +1,66 @@
-// x0 = head
+// Programmer: Gregory Shane and Jacob Campbell
+// CS3B - Spring 2023
+// RASM4 - display_strings subroutine
+// last Modified: 4.10.2023
 
+// display_strings subrotine takes headPtr from x0, traverses all nodes of a linked-list,
+//  and displays them to the terminal with their indexes.
+//
+//  x0 must contain headPtr of a linked-list
+//  LR must contain return address
+//
+//  ALL AAPCS mandated registers are preserved.
 
 	.global display_strings
 
 	.data
-chSP:		.byte	32
-chLS:		.byte	60
-chRS:		.byte	62
-szIndDS:	.skip	21
+chSP:		.byte	32		// " "
+chLS:		.byte	60		// "<"
+chRS:		.byte	62		// ">"
+szIndDS:	.skip	21		// index converted into a string
 
 	.text
 display_strings:
 
-	STR x19, [SP, #-16]!
-	STR x20, [SP, #-16]!
-	STR x30, [SP, #-16]!
+	STR x19, [SP, #-16]!		// Push
+	STR x20, [SP, #-16]!		// Push
+	STR x30, [SP, #-16]!		// Push LR
 
-	MOV x19, x0
-	LDR x19, [x19]
-	MOV x21, #0
+	MOV x19, x0			// copy headPtr
+	LDR x19, [x19]			// load address first node
+	MOV x21, #0			// x21 = index = 0
 
 display:
-	MOV x0, x21
-	LDR x1,=szIndDS
-	BL  int64asc
+	MOV x0, x21			// x0 = index
+	LDR x1,=szIndDS			// point to szIndDS
+	BL  int64asc			// convert index value to a string
 
-	LDR x0,=chLS
-	BL  putch
+	LDR x0,=chLS			// point to chLS
+	BL  putch			// display to terminal
 
-	LDR x0,=szIndDS
-	BL  putstring
+	LDR x0,=szIndDS			// point to szIndDS
+	BL  putstring			// display to terminal
 
-	LDR x0,=chRS
-	BL  putch
+	LDR x0,=chRS			// point to chRS
+	BL  putch			// display to terminal
 
-	LDR x0,=chSP
-	BL  putch
+	LDR x0,=chSP			// point to chSP
+	BL  putch			// display to terminal
 
-	LDR x0, [x19]
-	BL  putstring
+	LDR x0, [x19]			// load address of string
+	BL  putstring			// display to terminal
 
-	LDR x20, [x19, #8]
-	MOV x19, x20
+	LDR x20, [x19, #8]		// x20 = next node
+	MOV x19, x20			// x19 = next node
 
-	ADD x21, x21, #1
+	ADD x21, x21, #1		// x21 = index + 1
 
-	CMP x19, #0x00
-	BNE display
+	CMP x19, #0x00			// compare x19 for null
+	BNE display			// Branch back if not found
 
-	LDR x30, [SP], #16
-	LDR x20, [SP], #16
-	LDR x19, [SP], #16
+	LDR x30, [SP], #16		// POP LR
+	LDR x20, [SP], #16		// POP
+	LDR x19, [SP], #16		// POP
 
-	RET
+	RET				// Return
+	.end

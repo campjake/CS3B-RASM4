@@ -1,18 +1,30 @@
-// x0 = string
-// x1= head
-// x2 = tail
+// Programmer: Gregory Shane and Jacob Campbell
+// CS3B - Spring 2023
+// RASM4 - linked_list
+// Last Modified: 4.10.2023
+//
+// linked_list subroutine takes an address to a string, headPtr and tailPtr, and
+//  creates a linked-list or connects to an existing one.
+//
+// x0 must contain the address of a string
+// x1 must contain the address of a headPtr
+// x2 must contian the address of a tailPtr
+// LR must contain the return address
+//
+//  ALL AAPCS mandated registers are preserved
+//  Various registers impacted by malloc
 
 	.global linked_list
 
 	.text
 linked_list:
-	STR x19, [SP, #-16]!
-	STR x20, [SP, #-16]!
-	STR x21, [SP, #-16]!
-	STR x30, [SP, #-16]!
+	STR x19, [SP, #-16]!	// Push
+	STR x20, [SP, #-16]!	// Push
+	STR x21, [SP, #-16]!	// Push
+	STR x30, [SP, #-16]!	// Push LR
 
-	MOV x19, x1		// address of head
-	MOV x20, x2		// address of tail
+	MOV x19, x1		// address of headPtr
+	MOV x20, x2		// address of tailPtr
 
 	BL  String_copy		// copy string
 
@@ -31,20 +43,19 @@ linked_list:
 
 	STR x0, [x19]		// store inside head
 	STR x0, [x20]		// store inside tail
-
-	B   finish
+	B   finish		// branch to finish
 
 link:
 	LDR x1, [x20]		// load address store in tail
 	STR x0, [x1, #8]	// store inside second half of tail node
 	STR x0, [x20]		// store new tail
 
-
 finish:
-	LDR x30, [SP], #16
-	LDR x21, [SP], #16
-	LDR x20, [SP], #16
-	LDR x19, [SP], #16
+	LDR x30, [SP], #16	// POP LR
+	LDR x21, [SP], #16	// POP
+	LDR x20, [SP], #16	// POP
+	LDR x19, [SP], #16	// POP
 
 
-	RET
+	RET			// Return
+	.end
