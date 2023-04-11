@@ -4,7 +4,6 @@
 	.global display_strings
 
 	.data
-chLF:		.byte	10
 chSP:		.byte	32
 chLS:		.byte	60
 chRS:		.byte	62
@@ -40,9 +39,6 @@ display:
 
 	LDR x0, [x19]
 	BL  putstring
-
-	LDR x0,=chLF
-	BL  putch
 
 	LDR x20, [x19, #8]
 	MOV x19, x20
