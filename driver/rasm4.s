@@ -90,7 +90,8 @@ check6:
 	CMP w0, #'6'		// check w0 for ascii '6'
 	BNE check7		// Branch to check7 if not found
 
-//	BL  save_file
+	LDR x0,=head
+	BL  save_file		// call save_file(head)
 	B   main_loop		// Branch back to main_loop
 
 
