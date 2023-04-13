@@ -82,7 +82,16 @@ check5:
 	CMP w0, #'5'		// check w0 for ascii '5'
 	BNE check6		// Branch to check6 if not found
 
-//	BL  string_search
+	LDR x0,=szPrompt	// point to szPrompt
+	BL  putstring		// display to terminal
+
+	LDR x0,=szInput		// point to szInput
+	LDR x1, #512		// max character input is 512 characters
+	BL  getstring		// cin >> input
+
+	LDR x0,=head		// point to head
+	LDR x1,=szInput		// point to szInput
+	BL  string_search	// string_search(&firstNode, string)
 	B  main_loop		// Branch back to main_loop
 
 // option 6
