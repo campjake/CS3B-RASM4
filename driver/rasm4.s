@@ -118,6 +118,8 @@ invalid:
 
 end:
 // clear memory
+// ======== need to add a check for if list is empty ===== (nothing in head) ========
+
 	LDR x0,=head		// point to head
 	BL  clear_memory	// call free function(head)
 

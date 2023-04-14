@@ -16,10 +16,10 @@
 	.global	load_file			// sets starting point of subrotuine
 
 	.data
-szInFile:	.asciz	"input.txt"
+szPromptIF:	.asciz	"\nEnter file to load data from: "
 szInError:	.asciz	"File Not Found\n"
 szReading:	.asciz	"Reading from file...\n"
-szInLine:	.skip	512			// input buffer for file
+szInFile:	.skip	512			// input buffer for file
 
 	.text
 load_file:
@@ -30,6 +30,13 @@ load_file:
 
 	MOV x19, x0				// copy headPtr
 	MOV x20, x1				// copy tailPtr
+
+	LDR x0,=szPromptIF			// point to szPromptIF
+	BL  putstring				// display to terminal
+
+	LDR x0,=szInFile			// point to szInFile
+	MOV x1, #512				// max character input is 512
+	BL  getstring				// cin >> InFile
 
 	MOV x0, #-100				// local file directory
 	LDR x1, =szInFile			// points to szInFile
@@ -47,13 +54,13 @@ load_file:
 read:
 	MOV x0, x21				// x0 = iFD
 
-	LDR x1,=szInLine			// points to szInLine
+	LDR x1,=szInFile			// points to szInFile
 	BL  getline				// Branch to getline()
 
 	CMP x0, #0				// compare x0 for 0
 	BEQ close_inFile			// branch to close_inFile if equal
 
-	LDR x0,=szInLine			// point to szInLine
+	LDR x0,=szInFile			// point to szInFile
 	MOV x1, x19				// x1 = headPtr
 	MOV x2, x20				// x2 = tailPtr
 	BL   linked_list			// Branch to linked_list

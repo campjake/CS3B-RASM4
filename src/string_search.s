@@ -18,8 +18,8 @@
 	.global string_search		// point to start of subroutine
 
 	.data
-szLT:		.asciz	"<"
-szGT:		.asciz	"> "
+szLT:		.asciz	"  <"
+szGT:		.asciz	"> : "
 szIndex:	.skip	21		// string to output index
 
 	.text
@@ -36,6 +36,7 @@ string_search:
 
 	LDR x19, [x19]			// load node address
 
+	BL  hits_found
 search:
 	LDR x0, [x19]			// string address
 	MOV x1, x20			// substring
@@ -47,7 +48,7 @@ search:
 	B   next_node			// Brnach to next_node
 
 display_index:
-	LDR x0,=szLT			// point to szLT
+	LDR x0,=szLT			// point to szLine
 	BL  putstring			// display to terminal
 
 	MOV x0, x21			// copy index to x0
@@ -57,7 +58,7 @@ display_index:
 	LDR x0,=szIndex			// point to szIndex
 	BL  putstring			// display to terminal
 
-	LDR x0,=szGT			// point to szGT
+	LDR x0,=szGT			// point to szColon
 	BL  putstring			// display to terminal
 
 	LDR x0, [x19]			// point to string inside node

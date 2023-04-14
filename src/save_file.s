@@ -15,7 +15,9 @@
 	.global save_file		// set starting point for subroutine
 
 	.data
-szOutFile:	.asciz	"output.txt"
+szPromptOF:	.asciz	"\nSave File as: "
+szSaved:	.asciz	"Saved file to local directory.\n"
+szOutFile:	.skip	512
 
 	.text
 save_file:
@@ -26,6 +28,13 @@ save_file:
 	STR x30, [SP, #-16]!		// PUSH LR
 
 	MOV x20, x0			// store copy to first node
+
+	LDR x0,=szPromptOF		// point to szPromptOF
+	BL  putstring			// display to terminal
+
+	LDR x0,=szOutFile		// point to szOutFile
+	MOV x1, #512			// maximum character input is 512 characters
+	BL  getstring			// cin >> OutFile
 
 	MOV x0, -100			// location is local directory
 	LDR x1, =szOutFile		// point to szOutFile
@@ -55,6 +64,9 @@ write:
 	BNE write			// branch back to write if not found
 
 end_save:
+	LDR x0,=szSaved			// point to szSaved
+	BL  putstring			// display to terminal
+
 	MOV x0, x19			// x0 = iFD
 	MOV x8, #57			// Service Code 57 for close
 	SVC 0				// Call Linux to close file
