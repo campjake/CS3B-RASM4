@@ -12,21 +12,29 @@ tail:		.quad	0	// tailPtr
 szInput:	.skip	512	// input from user
 szPrompt:	.asciz	"Enter a String: "
 szInvalid:	.asciz	"Invalid choice, please settle from the options provided\n"
+szEmpty:	.asciz	"\nERROR. LIST IS EMPTY. CANNOT COMPLETE ACTION. PLEASE CHOOSE A DIFFERENT OPTION.\n"
+chCr:		.byte	10
 
 	.text
 _start:
 
 main_loop:
-// opption 1
+// load menu
 	LDR x0,=head		// point to head
 	BL  menu		// calls menu to terminal
 
+// first option
 	CMP w0, #'1'		// compare w0 for ascii '1'
 	BNE check2		// Branch if not equal to check2
 
+	BL  check_empty		// Branch to check_empty to confirm action can be done
+
+	LDR x0, =chCr		// point to chCr
+	BL  putch		// display to terminal
+
 	LDR x0, =head		// point to head
  	BL  display_strings	// calls display strings t0 terminal
-	B  main_loop		// Branch back to main_loop
+	B   main_loop		// Branch back to main_loop
 
 // option 2
 check2:
@@ -66,6 +74,8 @@ check3:
 	CMP w0, #'3'		// check w3 for ascii '3'
 	BNE check4		// Branch to check4 if not found
 
+	BL check_empty		// branch to check that link-list is not empty
+
 //	BL  delete_string
 	B  main_loop		// Branch back to main_loop
 
@@ -74,13 +84,17 @@ check4:
 	CMP w0, #'4'		// check w0 for ascii '4'
 	BNE check5		// Branch to check5 if not found
 
+	BL  check_empty		// check to ensure link-list is not empty
+
 //	BL  edit_string
 	B  main_loop		// Branch back to main_loop
 
-// optrion 5
+// option 5
 check5:
 	CMP w0, #'5'		// check w0 for ascii '5'
 	BNE check6		// Branch to check6 if not found
+
+	BL  check_empty		// check to ensure link-list is not empty
 
 	LDR x0,=szPrompt	// point to szPrompt
 	BL  putstring		// display to terminal
@@ -107,7 +121,7 @@ check6:
 // option 7
 check7:
 	CMP w0, #'7'		// check w0 for ascii '7'
-	BEQ end			// Branch to end if found
+	BEQ clear		// Branch to clear if found
 
 // invalid entry (not 1-7, or 2a, 2b)
 invalid:
@@ -116,16 +130,46 @@ invalid:
 
 	B   main_loop		// Branch back to main_loop
 
-end:
+clear:
 // clear memory
-// ======== need to add a check for if list is empty ===== (nothing in head) ========
+	LDR x0,=head
+	BL  is_empty		// call function to check if linked-list is empty
+
+	CMP x0, #0		// Compare to see if 0 was returned to x0
+	BEQ exit		// branch to end if found
 
 	LDR x0,=head		// point to head
 	BL  clear_memory	// call free function(head)
 
+exit:
 // exit
 	MOV x0, #0		// Return code 0
 	MOV x8, #93		// Service code 93 for terminate
 	SVC 0			// call Linux to terminate
+
+
+
+
+
+
+// Error check for empty link list before certain options (1, 3, 4, 5)
+check_empty:
+	STR x30, [SP, #-16]!		// PUSH LR
+
+	LDR x0,=head			// point to head
+	BL  is_empty			// is_empty(head)
+
+	CMP x0, #0			// compare to see if 0 was returned
+	BEQ empty			// branch to empty if 0
+
+	LDR x30, [SP], #16		// POP LR
+	RET				// Return back to option
+
+empty:
+	LDR x0,=szEmpty			// point to szEmpty
+	BL  putstring			// display to terminal
+
+	LDR x30, [SP], #16		// POP LR
+	B   main_loop			// Branch back to main_loop selection
 
 	.end
