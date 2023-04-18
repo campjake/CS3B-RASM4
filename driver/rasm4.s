@@ -75,8 +75,9 @@ check3:
 	BNE check4		// Branch to check4 if not found
 
 	BL check_empty		// branch to check that link-list is not empty
+	MOV X1, X0			// Head must be in X1
 
-//	BL  delete_string
+	BL  delete_string
 	B  main_loop		// Branch back to main_loop
 
 // option 4
@@ -85,8 +86,9 @@ check4:
 	BNE check5		// Branch to check5 if not found
 
 	BL  check_empty		// check to ensure link-list is not empty
-
-//	BL  edit_string
+	MOV X1, X0			// Head must be in X1
+	
+	BL  edit_string
 	B  main_loop		// Branch back to main_loop
 
 // option 5
