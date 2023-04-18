@@ -19,7 +19,7 @@
 
 	.data
 szNewStrInput:	.skip	512		// New string to get from user
-szIndexAsStr	.skip	21		// Largest number in 64-bit
+szIndexAsStr:	.skip	21		// Largest number in 64-bit
 szGetIndexPr:	.asciz	"Enter search index: "
 szCurrentStr:	.asciz	"String found! Printing string...\n\n"
 szNoString:		.asciz	"The string was not found\n\n"
@@ -61,7 +61,7 @@ edit_string:
 	BL		putch				// Print Line Feed
 
 // Convert Index to int
-	LDR		szIndexAsStr		// Load address of string
+	LDR		X0,=szIndexAsStr	// Load address of string
 	BL		ascint64			// X0 = index
 
 // Find the node requested by the user	
@@ -131,3 +131,4 @@ done:
 	LDR		X20, [SP], #16		// Pop X20
 	LDR		X19, [SP], #16		// Pop X19
 	RET
+	

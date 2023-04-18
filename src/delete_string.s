@@ -21,7 +21,7 @@
 szCurrentStr:	.asciz	"String found! Printing string...\n\n"
 szNoString:		.asciz	"The string was not found\n\n"
 szGetIndexPr:	.asciz	"Enter search index: "
-szIndexAsStr	.skip	21		// Largest number in 64-bit
+szIndexAsStr:	.skip	21		// Largest number in 64-bit
 szGetConfirm:	.asciz	"Are you sure you want to delete this string? (Y/N): "
 szUserConfirm:	.skip	2		// 'Y'/'N' from user + null
 szConfirm:		.asciz	"... Done! The string has been deleted.\n\n"
@@ -62,7 +62,7 @@ delete_string:
 	BL		putch				// Print Line Feed
 
 // Convert Index to int
-	LDR		szIndexAsStr		// Load address of string
+	LDR		X0,=szIndexAsStr	// Load address of string
 	BL		ascint64			// X0 = index
 
 // Find the node requested by the user	
@@ -73,7 +73,7 @@ delete_string:
 	BL		sequential_search_list	// Get the node, if it exists, in X0
 
 	CMP		X0, #-1					// Make sure node exists
-	BEQ		string_not_found		// Let user know the string isn't there
+	BEQ		abort_delete			// Let user know the string isn't there
 	MOV		X22, X0					// Copy node address to X22
 
 // Find the node right before it	
@@ -84,7 +84,7 @@ delete_string:
 	BL		sequential_search_list	// Get the node, if it exists, in X0
 
 	CMP		X0, #-1					// Make sure node exists
-	BEQ		string_not_found		// Let user know the string isn't there
+	BEQ		abort_delete		// Let user know the string isn't there
 	MOV		X23, X0					// Copy node address to X23
 	ADD		X23, X23, #8			// X23 points to tail
 // Print the string
@@ -158,6 +158,7 @@ delete_string:
 	LDR		X21, [SP], #16		// Pop X21
 	LDR		X20, [SP], #16		// Pop X20
 	LDR		X19, [SP], #16		// Pop X19
+	B		done				// Go to return if done
 
 abort_delete:
 	LDR		X0,=szAbort				// Load cancel message
@@ -169,3 +170,9 @@ abort_delete:
 	LDR		X0,=chLF				// Load Line Feed
 	BL		putch					// Print Line Feed
 	
+done:
+	LDR		X22, [SP], #16		// Pop X22
+	LDR		X21, [SP], #16		// Pop X21
+	LDR		X20, [SP], #16		// Pop X20
+	LDR		X19, [SP], #16		// Pop X19
+	RET
