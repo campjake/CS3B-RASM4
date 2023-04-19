@@ -7,7 +7,8 @@
 
 szSearch:		.asciz	"\nSearch \""
 szSearch2:		.asciz	"\" ("
-szSearch3:		.asciz	" hits in 1 file of 1 searched)\n"
+szSearch3:		.asciz	" hits in 1 file of "
+szSearch4:		.asciz	" searched)\n"
 
 szHits:		.skip	21
 szTotal:	.skip	21
@@ -19,15 +20,19 @@ hits_found:
 	STR x20, [SP, #-16]!
 	STR x21, [SP, #-16]!
 	STR x22, [SP, #-16]!
+	STR x23, [SP, #-16]!
 	STR x30, [SP, #-16]!
 
 	MOV x19, x0		// copy head
 	MOV x20, x1		// copy string
 	MOV x21, #0		// hit counter
+	MOV x22, #0		// total counter
 
 	LDR x19, [x19]
 
 hits_search:
+ 	ADD x22, x22, #1
+
 	LDR x0, [x19]
 	MOV x1, x20
 	BL  string_found
@@ -41,8 +46,8 @@ hit_count:
 	ADD x21, x21, #1
 
 next:
-	LDR x22, [x19, #8]
-	MOV x19, x22
+	LDR x23, [x19, #8]
+	MOV x19, x23
 	CMP x19, #0x00
 	BNE hits_search
 
@@ -66,7 +71,18 @@ next:
 	LDR x0,=szSearch3
 	BL  putstring
 
+	MOV x0, x22
+	LDR x1,=szTotal
+	BL  int64asc
+
+	LDR x0, =szTotal
+	BL  putstring
+
+	LDR x0,=szSearch4
+	BL  putstring
+
 	LDR x30, [SP], #16
+	LDR x23, [SP], #16
 	LDR x22, [SP], #16
 	LDR x21, [SP], #16
 	LDR x20, [SP], #16

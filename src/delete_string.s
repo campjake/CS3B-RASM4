@@ -1,178 +1,118 @@
-// Style Sheet
-// Programmer   : Jacob Campbell & Gregory Shane
-// RASM #       : 4
-// Purpose      : Text Editor
-// Date         : 4/20/2023
+// Programmer: Jacob Campbell and Gregory Shane
+// CS3B - Spring 2023
+// RASM 4 - delete_string
+// last modified: 4.18.2023
 
-// This function allows the user to search a list for a node 
-// that is n spots from the head
-// The function then allows the user to delete the node
-
-// Pre-conditions:
-//	X1 - Contains the pointer to the head of the list
-//	*** Assumes the last 8 bytes of node are next pointer***
-
-// Post-conditions:
-//	String in node, if found, is replaced with user input
-
-// Registers X0 - X10 are modified and not preserved (int64asc)
-
-	.data
-szCurrentStr:	.asciz	"String found! Printing string...\n\n"
-szNoString:		.asciz	"The string was not found\n\n"
-szGetIndexPr:	.asciz	"Enter search index: "
-szIndexAsStr:	.skip	21		// Largest number in 64-bit
-szGetConfirm:	.asciz	"Are you sure you want to delete this string? (Y/N): "
-szUserConfirm:	.skip	2		// 'Y'/'N' from user + null
-szConfirm:		.asciz	"... Done! The string has been deleted.\n\n"
-szLine:			.asciz	"Line "
-szColon:		.asciz	": "
-szAbort:		.asciz	"Deletion was canceled"
-chLF:			.byte	0xA		// Line Feed
-chTAB:			.byte	0x9		// Tab
+// delete_string subrotuine takes the pointer to the label that contains the first node of a linked listt.
+//   the routine will then prompt user for index to delete, check for existence, and delete the indicated
+//   index.
+//
+//  x0 must contain the address to the label that contains the first node
+//  LR must contain the return address
+//  Routine preserves all mandated AAPCS registers
+//  free impacts various registers.
 
 	.global delete_string
+
+	.data
+
+szPromptDel:	.asciz	"Choose a index to remove: "
+szDelError:	.asciz	"Invalid index to delete, please select again:.\n"
+szInputDel:	.skip	21
+
 	.text
-
 delete_string:
-	STR		X19, [SP, #-16]!	// Push X19
-	STR		X20, [SP, #-16]!	// Push X20
-	STR		X21, [SP, #-16]!	// Push X21
-	STR		X22, [SP, #-16]!	// Push X22
-	STR		LR, [SP, #-16]!		// Push LR
+	STR x19, [SP, #-16]!	// PUSH
+	STR x20, [SP, #-16]!	// PUSH
+	STR x21, [SP, #-16]!	// PUSH
+	STR x22, [SP, #-16]!	// PUSH
+	STR x23, [SP, #-16]!	// PUSH
+	STR x30, [SP, #-16]!	// PUSH LR
 
-// Get listLength
-	MOV		X19, X1				// Copy head
-	BL		data_count			// X1 = listLength
-	MOV		X20, X1				// Copy list length
+	MOV x19, x0		// copy head
+	LDR x21, [x19]		// load node to x21
+	BL  data_count		// check for number of nodes
 
-// Prompt User for index number
-	LDR		X0,=szGetIndexPr	// Load address of prompt
-	BL		putstring			// Print Prompt
+	MOV x20, x1		// store nodes
+	SUB x20, x20, #1	// index available is one less than number of nodes (0 index)
 
-// Get Index Number
-	LDR		X0,=szIndexAsStr	// Load address of buffer
-	MOV		X1, #21				// Size of buffer
-	BL		getstring			// String stored to memory
+Input_delete:
+	LDR x0,=szPromptDel	// point to szPromptDel
+	BL  putstring		// displays to terminal
 
-	LDR		X0,=chLF			// Load Line Feed
-	BL		putch				// Print Line Feed
+	LDR x0,=szInputDel	// points to szInputDel
+	MOV x1, #21		// max number of characters for input is 21
+	BL  getstring		// cin >> index to delete
 
-	LDR		X0,=chLF			// Load Line Feed
-	BL		putch				// Print Line Feed
+	LDR x0,=szInputDel	// point szInputDel
+	BL  ascint64		// converts value in string to an int in x0
 
-// Convert Index to int
-	LDR		X0,=szIndexAsStr	// Load address of string
-	BL		ascint64			// X0 = index
+	CMP x0, #0		// compare x0 and 0
+	BLT error		// branch if less than to error
 
-// Find the node requested by the user	
-	MOV		X21, X0					// Copy index to X21
-	MOV		X1, X19					// Copy head to X1
-	MOV		X2, X20					// Copy listLength to X2
-	MOV		X3, #16					// Node size in X3
-	BL		sequential_search_list	// Get the node, if it exists, in X0
+	CMP x0, #0		// compare x0 and 0
+	BEQ delete_first_node	// branch to delete_first_node if equals
 
-	CMP		X0, #-1					// Make sure node exists
-	BEQ		abort_delete			// Let user know the string isn't there
-	MOV		X22, X0					// Copy node address to X22
+	CMP x0, x20		// compare x0 and x20 (selected and max index)
+	BLE search_delete	// branch to search_delete if less than
 
-// Find the node right before it	
-	SUB		X21, X0, #1				// Copy (index - 1) to X21
-	MOV		X1, X19					// Copy head to X1
-	MOV		X2, X20					// Copy listLength to X2
-	MOV		X3, #16					// Node size in X3
-	BL		sequential_search_list	// Get the node, if it exists, in X0
+error:
+	LDR x0,=szDelError	// point to szDelError
+	BL  putstring		// Display to terminal
+	B   Input_delete	// brnach back to Input_delete
 
-	CMP		X0, #-1					// Make sure node exists
-	BEQ		abort_delete		// Let user know the string isn't there
-	MOV		X23, X0					// Copy node address to X23
-	ADD		X23, X23, #8			// X23 points to tail
-// Print the string
-	LDR		X0,=chTAB				// Load tab
-	BL		putch					// Print tab
+// x21 equals current node, x22 equals next node, x23 equals previous node
+search_delete:
+	CMP x0, #0		// compare x0 against 0 (index counter)
+	BEQ delete_index	// Branch if equal to delete_index
 
-	LDR		X0,=szLine				// Load "Line "
-	BL		putstring				// Print "Line "
+	MOV x23, x21		// copy current to previous
+	LDR x22, [x21, #8]	// x22 = next node
+	MOV x21, x22		// current = next
+	LDR x22, [x21, #8]	// x22 = next->next node
+	SUB x0, x0, #1		// index counter --
 
-	LDR		X0,=szIndexAsStr		// Load indexStr
-	BL		putstring				// Print indexStr
+	B  search_delete	// branch back to search_delete
 
-	LDR		X0,=szColon				// Load ": "
-	BL		putstring				// Print ": "
+delete_index:
+	STR x22, [x23, #8]	// store next node address in previous node tail
 
-	LDR		X0, [X22]				// Load address of string to X0 
-	BL		putstring				// Print string for user to see
+	LDR x0, [x21]		// point to string within current node
+	BL  free		// free allocated memory
 
-	LDR		X0,=chLF				// Load Line Feed
-	BL		putch					// Print Line Feed
+	MOV x0, x21		// points to node to be deleted
+	BL  free		// free allocated memory
 
-	LDR		X0,=chLF				// Load Line Feed
-	BL		putch					// Print Line Feed
+	B  delete_end		// branch to delete_end
 
-// Get confirmation from the user
-	LDR		X0,=szGetConfirm		// Load confirmation request
-	BL		putstring				// Print confirmation req.
+delete_first_node:
+	LDR x22, [x21, #8]	// x22 = next node
+	STR x22, [x19]		// store next node into head (will be new first node)
 
-	LDR		X0,=szUserConfirm		// Load buffer
-	MOV		X1, #2					// Size of buffer
-	BL		getstring				// String saved to memory
+	LDR x0, [x21]		// point to string inside of current node
+	BL  free		// free allocated memory
 
-// Convert confirmation to uppercase in case user input is lowercase
-	LDR		X0,=szGetConfirm		// Load string
-	BL		toUpperCase				// Convert to uppercase
+	MOV x0, x21		// point to node
+	BL  free		// free allocated memory
 
-	LDRB	W0, [X0]				// Dereference to get Y/N
-	CMP		X0, 0x59				// Compare to 'Y'
-	BNE		abort_delete			// Jump to abort
+	B   delete_end		// brnach to delete end
 
-// free() the string
-	MOV		X1, #0				// Make sure we don't get rid of something we need
-	MOV		X2, #0				// Make sure we don't get rid of something we need
-	MOV		X3, #0				// Make sure we don't get rid of something we need
-	LDR		X0, [X22]			// Dereference node for string address
-	STR		X19, [SP, #-16]!	// Push X19
-	STR		X20, [SP, #-16]!	// Push X20
-	STR		X21, [SP, #-16]!	// Push X21
-	STR		X22, [SP, #-16]!	// Push X22
-	STR		LR, [SP, #-16]!		// Push LR
-	BL		free				// free() the string
-	LDR		LR, [SP], #16		// Pop LR
-	STR		X22, [SP, #-16]!	// Push X22
-	LDR		X21, [SP], #16		// Pop X21
-	LDR		X20, [SP], #16		// Pop X20
-	LDR		X19, [SP], #16		// Pop X19
+// free data and assign head = 0
+only_node:
+	LDR x0, [x21]		// point to string inside node
+	BL  free		// free allocated memory
 
-// prev node.next = current node.next
-	MOV		X0, X22				// Copy node address to X0
-	ADD		X24, X22, #8		// Get tailPtr in X24
-	LDR		X24, [X24]			// Get address of next node
-	STR		X24, [X23]			// Store next node to tail of prev node
+	MOV x0, x21		// point to node
+	BL  free		// free node
 
-// free() the node	
-	STR		X19, [SP, #-16]!	// Push X19
-	STR		X20, [SP, #-16]!	// Push X20
-	STR		X21, [SP, #-16]!	// Push X21
-	STR		LR, [SP, #-16]!		// Push LR
-	BL		free				// free() the node
-	LDR		LR, [SP], #16		// Pop LR
-	LDR		X21, [SP], #16		// Pop X21
-	LDR		X20, [SP], #16		// Pop X20
-	LDR		X19, [SP], #16		// Pop X19
-	B		done				// Go to return if done
+	MOV x0, #0		// x0 = 0
+	STR x0, [x19]		// store 0 inside head (empty)
 
-abort_delete:
-	LDR		X0,=szAbort				// Load cancel message
-	BL		putstring				// Print cancel message
-
-	LDR		X0,=chLF				// Load Line Feed
-	BL		putch					// Print Line Feed
-
-	LDR		X0,=chLF				// Load Line Feed
-	BL		putch					// Print Line Feed
-	
-done:
-	LDR		X22, [SP], #16		// Pop X22
-	LDR		X21, [SP], #16		// Pop X21
-	LDR		X20, [SP], #16		// Pop X20
-	LDR		X19, [SP], #16		// Pop X19
+delete_end:
+	LDR x30, [SP], #16	// POP LR
+	LDR x23, [SP], #16	// POP
+	LDR x22, [SP], #16	// POP
+	LDR x21, [SP], #16	// POP
+	LDR x20, [SP], #16	// POP
+	LDR x19, [SP], #16	// POP
 	RET

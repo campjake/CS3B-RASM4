@@ -27,6 +27,7 @@ sequential_search_list:
 	STR		X19, [SP, #-16]!	// Push X19
 	STR		X20, [SP, #-16]!	// Push X20
 	STR		X21, [SP, #-16]!	// Push X21
+	STR		x30, [SP, #-16]!
 
 // Check if the node could possibly exist (input error check)
 	CMP		X0, X2			// Compare index number and listLength
@@ -59,6 +60,7 @@ node_found:
 	MOV	X0, X19				// Address of node in X0
 
 done:
+	LDR		x30, [SP], #16
 	LDR		X21, [SP], #16		// Pop X21
 	LDR		X20, [SP], #16		// Pop X20
 	LDR		X19, [SP], #16		// Pop X19

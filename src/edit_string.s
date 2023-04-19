@@ -1,134 +1,94 @@
-// Style Sheet
-// Programmer   : Jacob Campbell & Gregory Shane
-// RASM #       : 4
-// Purpose      : Text Editor
-// Date         : 4/20/2023
+// Programmer: Jacob Campbell and Gregory Shane
+// CS3B - Spring 2023
+// RASM4 - edit_string
+// last modified: 4.18.2023
 
-// This function allows the user to search a list for a node 
-// that is n spots from the head
-// The function then allows the user to edit the string at the node
-
-// Pre-conditions:
-//	X1 - Contains the pointer to the head of the list
-//	*** Assumes the last 8 bytes of node are next pointer***
-
-// Post-conditions:
-//	String in node, if found, is replaced with user input
-
-// Registers X0 - X10 are modified and not preserved (int64asc)
-
-	.data
-szNewStrInput:	.skip	512		// New string to get from user
-szIndexAsStr:	.skip	21		// Largest number in 64-bit
-szGetIndexPr:	.asciz	"Enter search index: "
-szCurrentStr:	.asciz	"String found! Printing string...\n\n"
-szNoString:		.asciz	"The string was not found\n\n"
-szNewStrPrompt:	.asciz	"Enter edited string below: "
-szConfirm:		.asciz	"... Done! The string has been replaced.\n\n"
-szLine:			.asciz	"Line "
-szColon:		.asciz	": "
-chLF:			.byte	0xA		// Line Feed
-chTAB:			.byte	0x9		// Tab
+// edit_string subroutine takes the address of the label that contains the first node of a linked-list
+//  and prompts the user for the index of a string that they want to change, and the new string. It then
+//  locates the string, and replaces it with the new one dynamically. Uses free to clear up the memory
+//  used for the old string. (No memory is lost)
+//
+//  x0 must contain the address that points to the first node of a linked-list
+//  LR must contain return address
+//  ALL AAPCS registers are preserved itself*
+//  *Free is not AAPCS compliant
 
 	.global edit_string
+
+	.data
+szPromptEdit:	.asciz	"Select an index of a string you would like to change: "
+szEditError:	.asciz	"Invalid index to edit. Please select again.\n"
+szNewString:	.asciz	"Input the new string you would like to save: "
+szInputEdit:	.skip	21	// index to edit
+szEditBuff:	.skip	512	// keyboard input buffer
+
+
 	.text
-
 edit_string:
-	STR		X19, [SP, #-16]!	// Push X19
-	STR		X20, [SP, #-16]!	// Push X20
-	STR		X21, [SP, #-16]!	// Push X21
-	STR		X22, [SP, #-16]!	// Push X22
-	STR		LR, [SP, #-16]!		// Push LR
+	STR x19, [SP, #-16]!	// PUSH
+	STR x20, [SP, #-16]!	// PUSH
+	STR x21, [SP, #-16]!	// PUSH
+	STR x30, [SP, #-16]!	// PUSH LR
 
-// Get listLength
-	MOV		X19, X1				// Copy head
-	BL		data_count			// X1 = listLength
-	MOV		X20, X1				// Copy list length
 
-// Prompt User for index number
-	LDR		X0,=szGetIndexPr	// Load address of prompt
-	BL		putstring			// Print Prompt
+	MOV x19, x0		// copy head address
+	LDR x19, [x19]		// node address
 
-// Get Index Number
-	LDR		X0,=szIndexAsStr	// Load address of buffer
-	MOV		X1, #21				// Size of buffer
-	BL		getstring			// String stored to memory
+	BL  data_count		// count the number of current nodes
+	MOV x20, x1		// x20 = results of counting nodes
+	SUB x20, x20, #1	// subtract 1 for max usuable index (0 -> n-1)
 
-	LDR		X0,=chLF			// Load Line Feed
-	BL		putch				// Print Line Feed
+input_edit:
+	LDR x0,=szPromptEdit	// point to szPromptEdit
+	BL  putstring		// display to terminal
 
-	LDR		X0,=chLF			// Load Line Feed
-	BL		putch				// Print Line Feed
+	LDR x0,=szInputEdit	// point to szInputEdit
+	MOV x1, #21		// max number of charcters is 21
+	BL  getstring		// cin >> index to edit
 
-// Convert Index to int
-	LDR		X0,=szIndexAsStr	// Load address of string
-	BL		ascint64			// X0 = index
+	LDR x0,=szInputEdit	// point to szInputEdit
+	BL  ascint64		// converts string to an integer value
 
-// Find the node requested by the user	
-	MOV		X21, X0					// Copy index to X21
-	MOV		X1, X19					// Copy head to X1
-	MOV		X2, X20					// Copy listLength to X2
-	MOV		X3, #16					// Node size in X3
-	BL		sequential_search_list	// Get the node, if it exists, in X0
+	CMP x0, #0		// compare x0 against 0
+	BLT error_edit		// Branch if less than to error_edit
 
-	CMP		X0, #-1					// Make sure node exists
-	BEQ		string_not_found		// Let user know the string isn't there
-	MOV		X22, X0					// Copy node address to X20
+	CMP x0, x20		// compare x0 and x20 (input index and max index)
+	BLE search_edit		// Branch if less than to search_edit
 
-// Print the string
-	LDR		X0,=chTAB				// Load tab
-	BL		putch					// Print tab
+error_edit:
+	LDR x0, =szEditError	// point to szEditError
+	BL  putstring		// display to terminal
+	B   input_edit		// Branch back to input_edit
 
-	LDR		X0,=szLine				// Load "Line "
-	BL		putstring				// Print "Line "
+search_edit:
+	CMP x0, #0		// compare x0 against 0
+	BEQ edit_index		// Branch if equal to edit_index
 
-	LDR		X0,=szIndexAsStr		// Load indexStr
-	BL		putstring				// Print indexStr
+	LDR x21, [x19, #8]	// x21 is next node
+	MOV x19, x21		// x19 equals next node
+	SUB x0, x0, #1		// index counter --
+	B search_edit		// branch back to search_edit
 
-	LDR		X0,=szColon				// Load ": "
-	BL		putstring				// Print ": "
+edit_index:
+	LDR x0,=szNewString	// point to szNewString
+	BL  putstring		// display to terminal
 
-	LDR		X0, [X22]				// Load address of string to X0 
-	BL		putstring				// Print string for user to see
+	LDR x0,=szEditBuff	// point szEditBuff
+	MOV x1, #512		// max input from keyboard is 512 characters
+	BL  getstring		// cin >> new_string
 
-	LDR		X0,=chLF				// Load Line Feed
-	BL		putch					// Print Line Feed
+	LDR x0,=szEditBuff	// point to szEditBuff
+	BL  String_copy		// string_copy(new_string)
 
-	LDR		X0,=chLF				// Load Line Feed
-	BL		putch					// Print Line Feed
+	LDR x1, [x19]		// load old string address to x1
+	STR x0, [x19]		// store new string address from x0
 
-// Get the new string from user
-	LDR		X0,=szNewStrPrompt		// Load Prompt
-	BL		putstring				// Print Prompt
+	MOV x0, x1		// Mov old address to x0 for free
+	BL  free		// free allocaed memory
 
-	LDR		X0,=chLF				// Load Line Feed
-	BL		putch					// Print Line Feed
-
-	LDR		X0,=chLF				// Load Line Feed
-	BL		putch					// Print Line Feed
-
-	LDR		X0,=szNewStrInput		// Load buffer
-	MOV		X1, #512				// Load sizeBuffer
-	BL		getstring				// String saved to memory
-
-// Edit the string in the node
-	LDR		X1, [X22]				// Load the node
-	LDR		X1, [X1]				// Load the address of the string
-
-	LDR		X0,=szNewStrInput		// Load the address of the new string
-	LDR		X0, [X0]				// Load the new string
-	STR		X0, [X1]				// Overwrite the old string in node
-	B	done						// Branch to done
-
-string_not_found:
-	LDR	X0,=szNoString				// Load NoString message for user
-	BL	putstring					// Print NoString message for user
-
-done:
-	LDR		LR, [SP], #16		// Pop LR
-	STR		X22, [SP, #-16]!	// Push X22
-	LDR		X21, [SP], #16		// Pop X21
-	LDR		X20, [SP], #16		// Pop X20
-	LDR		X19, [SP], #16		// Pop X19
-	RET
-	
+	LDR x30, [SP], #16	// POP LR
+	LDR x21, [SP], #16	// POP
+	LDR x20, [SP], #16	// POP
+	LDR x19, [SP], #16	// POP
+	RET			// Return
+	.end
