@@ -1,7 +1,16 @@
 // Programmer: Gregory Shane
 // CS3B - Spring 2023
-// RASM3 - String_copy
-// Last modified: 3.15.2023
+// RASM4 - String_copy
+// Last modified: 4.15.2023
+// Modified version includes a \n at the end of strings if doesn't exist.
+
+// String_Copy takes the address of a string in x0 and creates a dynamical copy of the string. This routine requires
+//   string_Length and malloc.  x0 will return the address of the dynamically allocated string.
+//
+//  x0 must contain the address of a null terminated string
+//  LR must contain the return address
+//  ALL mandated AAPCS registers are preserved.
+//  malloc messes with many registers.
 
 	.global String_copy
 
