@@ -2,14 +2,21 @@
 // CS3B - Spring 2023
 // RASM4
 // Purppse:
-// Last Modified: 4.11.2023
+// Last Modified: 4.19.2023
 
 	.global	_start		// set starting point of program
 
 	.data
+szIntro1:	.asciz	"Group 14: Jacob Campbell and Gregory Shane\n"
+szIntro2:	.asciz	"Class   : CS3B\n"
+szIntro3:	.asciz	"Project : RASM4\n"
+szIntro4:	.asciz	"Date    : 4.20.2023\n"
+
 head:		.quad	0	// headPtr
 tail:		.quad	0	// tailPtr
 szInput:	.skip	512	// input from user
+
+
 szPrompt:	.asciz	"Enter a String: "
 szInvalid:	.asciz	"Invalid choice, please settle from the options provided\n"
 szEmpty:	.asciz	"\nERROR. LIST IS EMPTY. CANNOT COMPLETE ACTION. PLEASE CHOOSE A DIFFERENT OPTION.\n"
@@ -17,6 +24,17 @@ chCr:		.byte	10
 
 	.text
 _start:
+	LDR x0,=szIntro1	// point to szIntro1
+	BL  putstring		// display to terminal
+
+	LDR x0,=szIntro2	// point to szIntro2
+	BL  putstring		// display to terminal
+
+	LDR x0,=szIntro3	// point to szIntro3
+	BL  putstring		// display to terminal
+
+	LDR x0,=szIntro4	// point to szIntro4
+	BL  putstring		// display to terminal
 
 main_loop:
 // load menu
@@ -26,8 +44,6 @@ main_loop:
 // first option
 	CMP w0, #'1'		// compare w0 for ascii '1'
 	BNE check2		// Branch if not equal to check2
-
-	BL  check_empty		// Branch to check_empty to confirm action can be done
 
 	LDR x0, =chCr		// point to chCr
 	BL  putch		// display to terminal
@@ -57,7 +73,7 @@ check2:
 	LDR x2,=tail		// x2 point to tail
 
 	BL  linked_list		// call lined_list(string, head, tail)
-	B  main_loop		// Branch back to main_loop
+	B   main_loop		// Branch back to main_loop
 
 // option 2b
 check2b:
@@ -74,11 +90,12 @@ check3:
 	CMP w0, #'3'		// check w3 for ascii '3'
 	BNE check4		// Branch to check4 if not found
 
-	BL check_empty		// branch to check that link-list is not empty
-	MOV X1, X0			// Head must be in X1
+	BL  check_empty		// branch to check that link-list is not empty
+	MOV X1, X0		// Head must be in X1
 
-	BL  delete_string
-	B  main_loop		// Branch back to main_loop
+	LDR x0, =head		// x0 = head for delete string
+	BL  delete_string	// delete_string(head)
+	B   main_loop		// Branch back to main_loop
 
 // option 4
 check4:
@@ -86,10 +103,10 @@ check4:
 	BNE check5		// Branch to check5 if not found
 
 	BL  check_empty		// check to ensure link-list is not empty
-	MOV X1, X0			// Head must be in X1
-	
-	BL  edit_string
-	B  main_loop		// Branch back to main_loop
+	LDR X0, =head		// Head must be in X0
+
+	BL  edit_string		// edit_string(head)
+	B   main_loop		// Branch back to main_loop
 
 // option 5
 check5:
@@ -102,23 +119,22 @@ check5:
 	BL  putstring		// display to terminal
 
 	LDR x0,=szInput		// point to szInput
-	LDR x1, #512		// max character input is 512 characters
+	MOV x1, #512		// max character input is 512 characters
 	BL  getstring		// cin >> input
 
 	LDR x0,=head		// point to head
 	LDR x1,=szInput		// point to szInput
 	BL  string_search	// string_search(&firstNode, string)
-	B  main_loop		// Branch back to main_loop
+	B   main_loop		// Branch back to main_loop
 
 // option 6
 check6:
 	CMP w0, #'6'		// check w0 for ascii '6'
 	BNE check7		// Branch to check7 if not found
 
-	LDR x0,=head
+	LDR x0,=head		// x0 must contain head for save_file()
 	BL  save_file		// call save_file(head)
 	B   main_loop		// Branch back to main_loop
-
 
 // option 7
 check7:
@@ -151,10 +167,7 @@ exit:
 
 
 
-
-
-
-// Error check for empty link list before certain options (1, 3, 4, 5)
+// Error check for empty link list before certain options (3, 4, 5)
 check_empty:
 	STR x30, [SP, #-16]!		// PUSH LR
 
