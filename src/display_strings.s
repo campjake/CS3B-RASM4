@@ -18,6 +18,7 @@ chSP:		.byte	32		// " "
 chLS:		.byte	60		// "<"
 chRS:		.byte	62		// ">"
 szIndDS:	.skip	21		// index converted into a string
+szErr:		.asciz	"[EMPTY]\n"
 
 	.text
 display_strings:
@@ -29,6 +30,8 @@ display_strings:
 	MOV x19, x0			// copy headPtr
 	LDR x19, [x19]			// load address first node
 	MOV x21, #0			// x21 = index = 0
+	CMP	x19, #0			// compare headPtr to 0
+	BEQ	display_empty	// Branch to display_empty if empty list
 
 display:
 	MOV x0, x21			// x0 = index
@@ -57,7 +60,15 @@ display:
 
 	CMP x19, #0x00			// compare x19 for null
 	BNE display			// Branch back if not found
+	B	end_display		// Branch when done
 
+display_empty:
+	LDR	x0,=szErr		// *x0 szErr
+	BL	putstring		// print szErr
+
+
+
+end_display:
 	LDR x30, [SP], #16		// POP LR
 	LDR x20, [SP], #16		// POP
 	LDR x19, [SP], #16		// POP
